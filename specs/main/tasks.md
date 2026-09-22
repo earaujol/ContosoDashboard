@@ -15,10 +15,10 @@
 
 **Purpose**: Project initialization and shared document infrastructure
 
-- [ ] T001 Create document feature directory structure under ContosoDashboard/ with model, service, and page entry points
+- [X] T001 Create document feature directory structure under ContosoDashboard/ with model, service, and page entry points
 - [ ] T002 [P] Add storage and document configuration defaults in ContosoDashboard/appsettings.json and appsettings.Development.json
-- [ ] T003 [P] Ensure the AppData/uploads directory exists for secure local file storage outside wwwroot
-- [ ] T004 [P] Add document-related dependency registration and service lifetime configuration in ContosoDashboard/Program.cs
+- [X] T003 [P] Ensure the AppData/uploads directory exists for secure local file storage outside wwwroot
+- [X] T004 [P] Add document-related dependency registration and service lifetime configuration in ContosoDashboard/Program.cs
 
 ---
 
@@ -28,12 +28,12 @@
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
-- [ ] T005 Extend ContosoDashboard/Data/ApplicationDbContext.cs with document DbSets, relationships, indexes, and seed-ready configuration
-- [ ] T006 [P] Create ContosoDashboard/Models/Document.cs and document metadata model definitions matching the data-model contract
-- [ ] T007 [P] Create ContosoDashboard/Models/DocumentShare.cs and ContosoDashboard/Models/DocumentActivityLog.cs
-- [ ] T008 Create ContosoDashboard/Services/IFileStorageService.cs with upload, delete, download, and URL abstraction methods
-- [ ] T009 [P] Implement ContosoDashboard/Services/LocalFileStorageService.cs for offline local storage with GUID-based file names and path generation
-- [ ] T010 Add document authorization rules and upload validation helpers in the expected service layer in ContosoDashboard/Services/
+- [X] T005 Extend ContosoDashboard/Data/ApplicationDbContext.cs with document DbSets, relationships, indexes, and seed-ready configuration
+- [X] T006 [P] Create ContosoDashboard/Models/Document.cs and document metadata model definitions matching the data-model contract
+- [X] T007 [P] Create ContosoDashboard/Models/DocumentShare.cs and ContosoDashboard/Models/DocumentActivityLog.cs
+- [X] T008 Create ContosoDashboard/Services/IFileStorageService.cs with upload, delete, download, and URL abstraction methods
+- [X] T009 [P] Implement ContosoDashboard/Services/LocalFileStorageService.cs for offline local storage with GUID-based file names and path generation
+- [X] T010 Add document authorization rules and upload validation helpers in the expected service layer in ContosoDashboard/Services/
 
 ---
 
@@ -45,14 +45,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] Add Document validation and upload workflow methods to ContosoDashboard/Services/DocumentService.cs
-- [ ] T012 [P] [US1] Add the document metadata fields and access rules to ContosoDashboard/Models/Document.cs, including category values and required constraints
-- [ ] T013 [US1] Implement file validation in ContosoDashboard/Services/DocumentService.cs for extension whitelist, size limit, MIME validation, and secure path generation
+- [X] T011 [P] [US1] Add Document validation and upload workflow methods to ContosoDashboard/Services/DocumentService.cs
+- [X] T012 [P] [US1] Add the document metadata fields and access rules to ContosoDashboard/Models/Document.cs, including category values and required constraints
+- [X] T013 [US1] Implement file validation in ContosoDashboard/Services/DocumentService.cs for extension whitelist, size limit, MIME validation, and secure path generation
 - [ ] T014 [US1] Implement the upload flow in ContosoDashboard/Pages/DocumentUpload.razor or the appropriate page component for multi-file selection and metadata capture
 - [ ] T015 [US1] Implement the user documents list and filtering in ContosoDashboard/Pages/Documents.razor or a document page set with category/project/date controls
 - [ ] T016 [US1] Create or update project document display in ContosoDashboard/Pages/ProjectDetails.razor to show project-associated documents for authorized team members
-- [ ] T017 [US1] Add upload success/error messaging and progress feedback in the document page UI within ContosoDashboard/Pages/
-- [ ] T018 [US1] Add secure storage persistence and database record creation so the file is written before the metadata record is saved in ContosoDashboard/Services/
+- [X] T017 [US1] Add upload success/error messaging and progress feedback in the document page UI within ContosoDashboard/Pages/
+- [X] T018 [US1] Add secure storage persistence and database record creation so the file is written before the metadata record is saved in ContosoDashboard/Services/
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently.
 

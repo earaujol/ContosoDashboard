@@ -1,0 +1,183 @@
+@page "/document-upload"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@attribute [Authorize]
+@inject DocumentService DocumentService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Upload Document - ContosoDashboard</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Upload document</h1>
+            <p class="text-muted">Add a work document to your personal document library.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card">
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(successMessage))
+                    {
+                        <div class="alert alert-success">@successMessage</div>
+                    }
+
+                    <div class="mb-3">
+                        <label for="document-file" class="form-label">File</label>
+                        <InputFile id="document-file" OnChange="OnFileSelected" class="form-control" />
+                        <div class="form-text">Supported documents and images up to 25 MB.</div>
+                        @if (selectedFile != null)
+                        {
+                            <div class="small text-muted mt-2">Selected: @selectedFile.Name (@FormatFileSize(selectedFile.Size))</div>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="document-title" class="form-label">Title</label>
+                        <input id="document-title" class="form-control" @bind="title" maxlength="255" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="document-category" class="form-label">Category</label>
+                        <select id="document-category" class="form-select" @bind="category">
+                            @foreach (var categoryValue in Enum.GetValues<DocumentCategory>())
+                            {
+                                <option value="@categoryValue">@categoryValue</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="document-description" class="form-label">Description <span class="text-muted">(optional)</span></label>
+                        <textarea id="document-description" class="form-control" rows="4" @bind="description" maxlength="2000"></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary" @onclick="UploadAsync" disabled="@(isUploading || selectedFile == null)">
+                            @if (isUploading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                <span>Uploading...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-upload me-1" aria-hidden="true"></i>
+                                <span>Upload document</span>
+                            }
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="Cancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IBrowserFile? selectedFile;
+    private string title = string.Empty;
+    private string description = string.Empty;
+    private DocumentCategory category = DocumentCategory.General;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isUploading;
+
+    private void OnFileSelected(InputFileChangeEventArgs args)
+    {
+        selectedFile = args.File;
+        errorMessage = null;
+        successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            title = Path.GetFileNameWithoutExtension(selectedFile.Name);
+        }
+    }
+
+    private async Task UploadAsync()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        if (selectedFile == null)
+        {
+            errorMessage = "Select a file before uploading.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            errorMessage = "Enter a document title.";
+            return;
+        }
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        var role = user.FindFirst(ClaimTypes.Role)?.Value ?? nameof(UserRole.Employee);
+
+        if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+        {
+            errorMessage = "Your user session could not be identified.";
+            return;
+        }
+
+        isUploading = true;
+        try
+        {
+            await using var stream = selectedFile.OpenReadStream(25 * 1024 * 1024);
+            var document = await DocumentService.UploadDocumentAsync(
+                stream,
+                selectedFile.Name,
+                selectedFile.ContentType,
+                title,
+                description,
+                category,
+                null,
+                userId,
+                null,
+                role);
+
+            if (document == null)
+            {
+                errorMessage = "The document was rejected. Check the file type and size, then try again.";
+                return;
+            }
+
+            successMessage = "Document uploaded successfully.";
+            selectedFile = null;
+            title = string.Empty;
+            description = string.Empty;
+            category = DocumentCategory.General;
+        }
+        catch (IOException)
+        {
+            errorMessage = "The document could not be stored. Please try again.";
+        }
+        catch (Exception)
+        {
+            errorMessage = "The document could not be uploaded. Please try again.";
+        }
+        finally
+        {
+            isUploading = false;
+        }
+    }
+
+    private void Cancel() => NavigationManager.NavigateTo("/documents");
+
+    private static string FormatFileSize(long size) => size switch
+    {
+        >= 1024 * 1024 => $"{size / 1024d / 1024d:0.##} MB",
+        >= 1024 => $"{size / 1024d:0.##} KB",
+        _ => $"{size} bytes"
+    };
+}

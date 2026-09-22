@@ -1,0 +1,113 @@
+@page "/documents"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject DocumentService DocumentService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>My Documents - ContosoDashboard</PageTitle>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>My Documents</h1>
+            <p class="text-muted mb-0">Documents uploaded by you or shared with you.</p>
+        </div>
+        <button class="btn btn-primary" @onclick="OpenUploadPage">
+            <i class="bi bi-upload me-1" aria-hidden="true"></i> Upload document
+        </button>
+    </div>
+
+    @if (isLoading)
+    {
+        <p><em>Loading documents...</em></p>
+    }
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+    else if (documents.Count == 0)
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-file-earmark-text display-4 text-muted" aria-hidden="true"></i>
+                <h2 class="h5 mt-3">No documents yet</h2>
+                <p class="text-muted">Upload your first document to make it available here.</p>
+                <button class="btn btn-primary" @onclick="OpenUploadPage">Upload document</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Category</th>
+                        <th>Project</th>
+                        <th>Uploaded</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var document in documents)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@document.Title</strong>
+                                <div class="small text-muted">@document.FileName</div>
+                            </td>
+                            <td>@document.Category</td>
+                            <td>@(document.Project?.Name ?? "Personal")</td>
+                            <td>@document.UploadedDate.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                            <td><span class="badge bg-@GetStatusColor(document.Status)">@document.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<Document> documents = new();
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userIdClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+            {
+                errorMessage = "Your user session could not be identified.";
+                return;
+            }
+
+            documents.AddRange(await DocumentService.GetDocumentsForUserAsync(userId));
+        }
+        catch (Exception)
+        {
+            errorMessage = "Documents could not be loaded. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenUploadPage() => NavigationManager.NavigateTo("/document-upload");
+
+    private static string GetStatusColor(DocumentStatus status) => status switch
+    {
+        DocumentStatus.Approved => "success",
+        DocumentStatus.Quarantined or DocumentStatus.Rejected => "danger",
+        DocumentStatus.PendingScan => "warning",
+        _ => "secondary"
+    };
+}
